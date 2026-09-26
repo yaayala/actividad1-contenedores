@@ -20,6 +20,9 @@ FROM nginx:alpine
 # Copia solo el resultado del build desde la etapa anterior a la carpeta pública de Nginx
 COPY --from=build /app/dist /usr/share/nginx/html
 
+# Configuración de Nginx: sirve la app y reenvía /api y /uploads al backend
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
 # Documenta el puerto en el que escucha Nginx
 EXPOSE 80
 

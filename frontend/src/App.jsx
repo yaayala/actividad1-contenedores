@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 
-const API_URL = 'http://localhost:5000/api/recipes';
-// Since our images are hosted on the backend port 5000, we need the base url
-const BACKEND_URL = 'http://localhost:5000/';
+// Relative URLs: Nginx (Docker) or the Vite dev proxy forward /api and /uploads to the backend
+const API_URL = '/api/recipes';
+const BACKEND_URL = '/';
 
 function App() {
   const [recipes, setRecipes] = useState([]);

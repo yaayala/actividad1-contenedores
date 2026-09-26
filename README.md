@@ -32,7 +32,7 @@ All three services share the Docker Hub repository [`yaayala/actividad1-contened
 | Backend  | `backend/Dockerfile`  | `yaayala/actividad1-contenedores:backend-v1.0`  | 5000           | 5000            |
 | Frontend | `frontend/Dockerfile` | `yaayala/actividad1-contenedores:frontend-v1.0` | 80 (Nginx)     | 8080            |
 
-> The frontend calls the API at `http://localhost:5000` from the browser, so the backend must be published on host port `5000`. Stop any local `node index.js` process before running the containers.
+> The frontend container (Nginx) serves the React app and forwards `/api` and `/uploads` to the `backend` container, so the browser only needs port `8080` (open it in the AWS security group). Port `5000` is published only for testing the API directly.
 
 ### Step 1: Build the images
 
@@ -101,12 +101,12 @@ The repository is public, so no `docker login` is needed to pull the images. Cho
      -v uploads:/app/uploads \
      yaayala/actividad1-contenedores:backend-v1.0
    ```
-5. Start the frontend:
+5. Start the frontend (it must be on the same network to reach `backend`):
    ```bash
-   docker run -d --name frontend -p 8080:80 \
+   docker run -d --name frontend --network recipe-net -p 8080:80 \
      yaayala/actividad1-contenedores:frontend-v1.0
    ```
-6. Open http://localhost:8080
+6. Open http://localhost:8080 (or `http://<server-public-ip>:8080`)
 
 To stop and remove everything:
 ```bash
