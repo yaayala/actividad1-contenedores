@@ -1,4 +1,4 @@
-# Imagen base oficial de MongoDB versión 8.0
+# Imagen base oficial de MongoDB versión 7.0
 FROM mongo:7.0
 
 # Nombre de la base de datos que se crea al iniciar por primera vez
