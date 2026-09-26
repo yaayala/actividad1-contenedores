@@ -1,0 +1,74 @@
+# Lista de servicios (contenedores) de la aplicación
+services:
+  # Servicio de base de datos
+  mongodb:
+    # Construye la imagen desde ./mongodb/Dockerfile
+    build: ./mongodb
+    # Nombre fijo del contenedor
+    container_name: mongodb
+    # Volúmenes montados en el contenedor
+    volumes:
+      # Guarda los datos de MongoDB en el volumen mongo-data
+      - mongo-data:/data/db
+    # Chequeo para saber si MongoDB está listo
+    healthcheck:
+      # Comando que hace ping a MongoDB
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      # Cada cuánto se ejecuta el chequeo
+      interval: 5s
+      # Tiempo máximo de espera por chequeo
+      timeout: 5s
+      # Intentos fallidos antes de marcarlo como no saludable
+      retries: 10
+    # Reinicia el contenedor salvo que se detenga manualmente
+    restart: unless-stopped
+
+  # Servicio de la API (Express)
+  backend:
+    # Construye la imagen desde ./backend/Dockerfile
+    build: ./backend
+    # Nombre fijo del contenedor
+    container_name: backend
+    # Variables de entorno del contenedor
+    environment:
+      # Cadena de conexión a MongoDB (usa el nombre del servicio como host)
+      MONGO_URI: mongodb://mongodb:27017/mern_recipes
+    # Puertos publicados (host:contenedor)
+    ports:
+      # Expone la API en localhost:5000
+      - "5000:5000"
+    # Volúmenes montados en el contenedor
+    volumes:
+      # Guarda las imágenes subidas en el volumen uploads
+      - uploads:/app/uploads
+    # Dependencias de arranque
+    depends_on:
+      # Espera al servicio mongodb
+      mongodb:
+        # Solo arranca cuando MongoDB pasa el healthcheck
+        condition: service_healthy
+    # Reinicia el contenedor salvo que se detenga manualmente
+    restart: unless-stopped
+
+  # Servicio web (React servido por Nginx)
+  frontend:
+    # Construye la imagen desde ./frontend/Dockerfile
+    build: ./frontend
+    # Nombre fijo del contenedor
+    container_name: frontend
+    # Puertos publicados (host:contenedor)
+    ports:
+      # Expone la web en localhost:8080
+      - "8080:80"
+    # Arranca después del backend
+    depends_on:
+      - backend
+    # Reinicia el contenedor salvo que se detenga manualmente
+    restart: unless-stopped
+
+# Volúmenes con nombre para persistir datos
+volumes:
+  # Datos de MongoDB
+  mongo-data:
+  # Imágenes subidas por el backend
+  uploads:
