@@ -1,5 +1,5 @@
 # Imagen base oficial de MongoDB versión 8.0
-FROM mongo:7
+FROM mongo:7.0
 
 # Nombre de la base de datos que se crea al iniciar por primera vez
 ENV MONGO_INITDB_DATABASE=mern_recipes
