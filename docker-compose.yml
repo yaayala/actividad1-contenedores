@@ -2,7 +2,9 @@
 services:
   # Servicio de base de datos
   mongodb:
-    # Construye la imagen desde ./mongodb/Dockerfile
+    # Imagen publicada en Docker Hub
+    image: yaayala/actividad1-contenedores:mongodb-v1.0
+    # Construye la imagen desde ./mongodb/Dockerfile (si se usa --build)
     build: ./mongodb
     # Nombre fijo del contenedor
     container_name: mongodb
@@ -25,7 +27,9 @@ services:
 
   # Servicio de la API (Express)
   backend:
-    # Construye la imagen desde ./backend/Dockerfile
+    # Imagen publicada en Docker Hub
+    image: yaayala/actividad1-contenedores:backend-v1.0
+    # Construye la imagen desde ./backend/Dockerfile (si se usa --build)
     build: ./backend
     # Nombre fijo del contenedor
     container_name: backend
@@ -52,7 +56,9 @@ services:
 
   # Servicio web (React servido por Nginx)
   frontend:
-    # Construye la imagen desde ./frontend/Dockerfile
+    # Imagen publicada en Docker Hub
+    image: yaayala/actividad1-contenedores:frontend-v1.0
+    # Construye la imagen desde ./frontend/Dockerfile (si se usa --build)
     build: ./frontend
     # Nombre fijo del contenedor
     container_name: frontend

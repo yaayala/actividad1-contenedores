@@ -22,25 +22,67 @@ Welcome to Level 5! In this project, you'll tackle one of the most common but tr
 
 ## Docker Deployment
 
-The project includes three Dockerfiles:
+The deployment follows three steps: **build** the images, **push** them to Docker Hub, and **run** them from Docker Hub.
 
-| Service  | Dockerfile            | Container port | Host port |
-|----------|-----------------------|----------------|-----------|
-| MongoDB  | `mongodb/Dockerfile`  | 27017          | (internal only) |
-| Backend  | `backend/Dockerfile`  | 5000           | 5000      |
-| Frontend | `frontend/Dockerfile` | 80 (Nginx)     | 8080      |
+All three services share the Docker Hub repository [`yaayala/actividad1-contenedores`](https://hub.docker.com/r/yaayala/actividad1-contenedores); each image is identified by its **tag** (`<service>-<version>`):
+
+| Service  | Dockerfile            | Image (Docker Hub)                              | Container port | Host port       |
+|----------|-----------------------|-------------------------------------------------|----------------|-----------------|
+| MongoDB  | `mongodb/Dockerfile`  | `yaayala/actividad1-contenedores:mongodb-v1.0`  | 27017          | (internal only) |
+| Backend  | `backend/Dockerfile`  | `yaayala/actividad1-contenedores:backend-v1.0`  | 5000           | 5000            |
+| Frontend | `frontend/Dockerfile` | `yaayala/actividad1-contenedores:frontend-v1.0` | 80 (Nginx)     | 8080            |
 
 > The frontend calls the API at `http://localhost:5000` from the browser, so the backend must be published on host port `5000`. Stop any local `node index.js` process before running the containers.
 
-### Option 1: Run each image separately with Docker
+### Step 1: Build the images
 
-All commands are run from the `13-Recipe-Book/` folder.
+From the `13-Recipe-Book/` folder, build each image already tagged with its Docker Hub name:
 
-1. Build the images:
+```bash
+docker build -t yaayala/actividad1-contenedores:mongodb-v1.0  ./mongodb
+docker build -t yaayala/actividad1-contenedores:backend-v1.0  ./backend
+docker build -t yaayala/actividad1-contenedores:frontend-v1.0 ./frontend
+```
+
+Verify the images:
+```bash
+docker images yaayala/actividad1-contenedores
+```
+
+> Alternative: `docker compose build` builds the three images with the same names (taken from the `image:` key in `docker-compose.yml`).
+
+### Step 2: Push the images to Docker Hub
+
+1. Log in to Docker Hub (asks for your password or access token):
    ```bash
-   docker build -t recipe-mongodb ./mongodb
-   docker build -t recipe-backend ./backend
-   docker build -t recipe-frontend ./frontend
+   docker login -u yaayala
+   ```
+2. Push the images:
+   ```bash
+   docker push yaayala/actividad1-contenedores:mongodb-v1.0
+   docker push yaayala/actividad1-contenedores:backend-v1.0
+   docker push yaayala/actividad1-contenedores:frontend-v1.0
+   ```
+   > Alternative: `docker compose push` pushes the three images.
+3. Check the **Tags** tab of the repository on Docker Hub.
+4. (Optional) Log out:
+   ```bash
+   docker logout
+   ```
+
+> For a new release, rebuild and push with a new version tag (e.g. `backend-v1.1`) and update the tag in `docker-compose.yml`.
+
+### Step 3: Run the images from Docker Hub
+
+The repository is public, so no `docker login` is needed to pull the images. Choose one of the two options.
+
+#### Option A: Run each image separately with Docker
+
+1. Pull the images from Docker Hub:
+   ```bash
+   docker pull yaayala/actividad1-contenedores:mongodb-v1.0
+   docker pull yaayala/actividad1-contenedores:backend-v1.0
+   docker pull yaayala/actividad1-contenedores:frontend-v1.0
    ```
 2. Create a network so the containers can reach each other by name:
    ```bash
@@ -49,17 +91,20 @@ All commands are run from the `13-Recipe-Book/` folder.
 3. Start MongoDB (the container name `mongodb` is the hostname the backend uses):
    ```bash
    docker run -d --name mongodb --network recipe-net \
-     -v mongo-data:/data/db recipe-mongodb
+     -v mongo-data:/data/db \
+     yaayala/actividad1-contenedores:mongodb-v1.0
    ```
 4. Start the backend:
    ```bash
    docker run -d --name backend --network recipe-net -p 5000:5000 \
      -e MONGO_URI=mongodb://mongodb:27017/mern_recipes \
-     -v uploads:/app/uploads recipe-backend
+     -v uploads:/app/uploads \
+     yaayala/actividad1-contenedores:backend-v1.0
    ```
 5. Start the frontend:
    ```bash
-   docker run -d --name frontend -p 8080:80 recipe-frontend
+   docker run -d --name frontend -p 8080:80 \
+     yaayala/actividad1-contenedores:frontend-v1.0
    ```
 6. Open http://localhost:8080
 
@@ -70,66 +115,24 @@ docker network rm recipe-net
 docker volume rm mongo-data uploads   # optional: deletes recipes and images
 ```
 
-### Option 2: Run everything with Docker Compose
+#### Option B: Run everything with Docker Compose
 
-From the `13-Recipe-Book/` folder:
+The `docker-compose.yml` references the Docker Hub images through the `image:` key. From the `13-Recipe-Book/` folder:
 
 ```bash
-docker compose up -d --build
+docker compose pull             # download the images from Docker Hub
+docker compose up -d --no-build # start the services without building
 ```
 
-This builds the three images, creates the network and volumes, and starts the services in order (the backend waits until MongoDB passes its healthcheck). Open http://localhost:8080
+This creates the network and volumes and starts the services in order (the backend waits until MongoDB passes its healthcheck). Open http://localhost:8080
 
 Useful commands:
 ```bash
-docker compose ps             # container status
+docker compose ps               # container status
 docker compose logs -f backend  # follow backend logs
-docker compose down           # stop and remove containers (keeps data)
-docker compose down -v        # also delete the volumes (recipes and images)
+docker compose down             # stop and remove containers (keeps data)
+docker compose down -v          # also delete the volumes (recipes and images)
 ```
-
-### Publishing the images to Docker Hub
-
-Repository: [`yaayala/actividad1-contenedores`](https://hub.docker.com/r/yaayala/actividad1-contenedores)
-
-Since the three services share one repository, each image is identified by its **tag** (`<service>-<version>`).
-
-1. Log in to Docker Hub (asks for your username and password or access token):
-   ```bash
-   docker login -u yaayala
-   ```
-2. Build the local images (skip if already built in Option 1):
-   ```bash
-   docker build -t recipe-mongodb ./mongodb
-   docker build -t recipe-backend ./backend
-   docker build -t recipe-frontend ./frontend
-   ```
-3. Tag each local image with the repository name and a version tag:
-   ```bash
-   docker tag recipe-mongodb  yaayala/actividad1-contenedores:mongodb-v1.0
-   docker tag recipe-backend  yaayala/actividad1-contenedores:backend-v1.0
-   docker tag recipe-frontend yaayala/actividad1-contenedores:frontend-v1.0
-   ```
-4. Verify the tags:
-   ```bash
-   docker images yaayala/actividad1-contenedores
-   ```
-5. Push the images:
-   ```bash
-   docker push yaayala/actividad1-contenedores:mongodb-v1.0
-   docker push yaayala/actividad1-contenedores:backend-v1.0
-   docker push yaayala/actividad1-contenedores:frontend-v1.0
-   ```
-6. Check the **Tags** tab of the repository on Docker Hub, or pull an image to confirm:
-   ```bash
-   docker pull yaayala/actividad1-contenedores:backend-v1.0
-   ```
-7. (Optional) Log out:
-   ```bash
-   docker logout
-   ```
-
-> For a new release, repeat steps 3 and 5 with a new version tag (e.g. `backend-v1.1`).
 
 ## Code Explanation
 
