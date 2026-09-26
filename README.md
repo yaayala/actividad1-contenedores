@@ -115,6 +115,8 @@ docker network rm recipe-net
 docker volume rm mongo-data uploads   # optional: deletes recipes and images
 ```
 
+> The `mongo-data` and `uploads` volumes keep recipes and images even if the containers are removed. If you change the MongoDB version, delete `mongo-data` first: a MongoDB version cannot open data files created by a different major version.
+
 #### Option B: Run everything with Docker Compose
 
 The `docker-compose.yml` references the Docker Hub images through the `image:` key. From the `13-Recipe-Book/` folder:
